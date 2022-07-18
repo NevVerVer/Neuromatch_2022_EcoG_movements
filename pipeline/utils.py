@@ -40,5 +40,6 @@ def make_mne_epochs(data: mne.io.RawArray,
 
 
 def make_epochs_psd(epochs: mne.Epochs):
-    psds, freqs = mne.time_frequency.psd_multitaper(epochs, fmin=0, fmax=150,)
+    psds, freqs = mne.time_frequency.psd_array_multitaper(
+        epochs.get_data(), epochs.info['sfreq'], fmin=2, fmax=150,)
     return psds, freqs
