@@ -24,7 +24,7 @@ def test_make_mne_epochs():
 
 
 def test_make_epochs_psd():
-    n_channels = 1
+    n_channels = 2
     t_min = -0.2
     t_max = 0.5
     sfreq = 500
