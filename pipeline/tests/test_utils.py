@@ -21,4 +21,3 @@ def test_make_mne_epochs():
     assert epochs.get_data().shape[1] == n_channels
     # NOTE: add 1
     assert epochs.get_data().shape[2] == (t_max - t_min) * sfreq + 1
-
