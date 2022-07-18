@@ -32,12 +32,12 @@ def test_make_epochs_tfr():
     data = np.random.random((n_channels, 3000))
     raw = mne.io.RawArray(data, info)
     begin_times = [500, 1000, 1500]
-    epochs = make_mne_epochs(raw, begin_times)
+    epochs = make_mne_epochs(raw, begin_times, t_min, t_max)
     freqs = np.logspace(*np.log10([10, 150]), num=8)
     epochs_tfr = make_epochs_tfr(epochs, freqs)
-    assert len(epochs_tfr.data.shape.shape) == 4
+    assert len(epochs_tfr.data.shape) == 4
     assert epochs_tfr.data.shape[0] == len(begin_times)
     assert epochs_tfr.data.shape[1] == n_channels
-    assert epochs_tfr.data.shape[2] == len(epochs_tfr)
+    assert epochs_tfr.data.shape[2] == len(freqs)
     # NOTE: add 1
     assert epochs_tfr.data.shape[3] == (t_max - t_min) * sfreq + 1
