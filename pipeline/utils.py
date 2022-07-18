@@ -1,12 +1,14 @@
 from typing import List, Union
 
 import mne
+from mne.time_frequency import tfr_morlet
 import numpy as np
 
 
 def make_mne_epochs(data: mne.io.RawArray,
-                    begin_times: Union[List[int], np.ndarray], tmin: float=-0.2,
-                    tmax: float=0.5) -> mne.Epochs:
+                    begin_times: Union[List[int], np.ndarray],
+                    tmin: float = -0.2,
+                    tmax: float = 0.5) -> mne.Epochs:
     """
     Make epochs from raw data.
 
@@ -39,7 +41,24 @@ def make_mne_epochs(data: mne.io.RawArray,
     return epochs
 
 
-def make_epochs_psd(epochs: mne.Epochs):
-    psds, freqs = mne.time_frequency.psd_array_multitaper(
-        epochs.get_data(), epochs.info['sfreq'], fmin=2, fmax=150,)
-    return psds, freqs
+def make_epochs_tfr(epochs: mne.Epochs,
+                    freqs: np.ndarray = np.logspace(*np.log10([10, 150]),
+                                                    num=8),
+                    n_cycles: int = 3) -> mne.time_frequency.EpochsTFR:
+    """
+    Make epochs power spectral density.
+
+    Parameters:
+        epochs: mne.Epochs
+            Epochs.
+        freqs: np.ndarray
+            Array of frequencies.
+        n_cycles: int
+            The number of cycles globally or for each frequency.
+
+    Returns:
+        epochs_tfr: mne.time_frequency.EpochsTFR
+    """
+    epochs_tfr = tfr_morlet(epochs, freqs=freqs, n_cycles=n_cycles,
+                            average=False, return_itc=False)
+    return epochs_tfr
