@@ -1,3 +1,4 @@
+import os
 import mne
 import nilearn
 from scipy import signal, stats
