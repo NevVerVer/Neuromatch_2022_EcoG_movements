@@ -97,8 +97,10 @@ def compute_tfr(epochs: mne.Epochs, epoch_times: List[float],
     n_cycles = freqs / 4.  # different number of cycle per frequency
 
     # Compute power for move trials
+    print('Computing power...')
     power = tfr_morlet(epochs, freqs=freqs, n_cycles=n_cycles, use_fft=False,
                        return_itc=False, decim=decim, n_jobs=1, average=False)
+    print('Done computing power.')
 
     # trim epoch to avoid edge effects
     power.crop(epoch_times[0] + crop_val, epoch_times[1] - crop_val)
