@@ -1,9 +1,11 @@
 from typing import List, Union
-from pathlib import Path
+import natsort
+import glob
 
 import mne
 from mne.time_frequency import tfr_morlet
 import numpy as np
+import pandas as pd
 
 
 def prepare_tfr_data(epochs: Union[mne.Epochs, mne.EpochsArray],
@@ -128,3 +130,100 @@ def tfr_subtract_baseline(power, chan_ind, baseidx, compute_mean=False):
     curr_power = input_power - np.tile(np.expand_dims(baseline, 1), (
         1, input_power.shape[1], 1))  # subtract baseline
     return curr_power
+
+
+def project_spectral_power(tfr_lp, roi_proj_loadpath, good_rois, n_subjs,
+                           atlas='aal', rem_bad_chans=False):
+    '''
+    Loads in electrode-level spectral power and projects it to ROI's.
+    Copied from: https://github.com/stepeter/naturalistic_arm_movements_ecog/blob/04c6faf2f219586fa834d10c614ef48a694cec55/compute_power_gen_figs_python/tfr_utils.py#L135
+    '''
+    first_pass = 0
+    metadata_list = []
+    metadata_all = []
+    for j in range(n_subjs):
+        fname_tfr = natsort.natsorted(glob.glob(
+            tfr_lp + '/subj_' + str(j + 1).zfill(2) + '*_epo-tfr.h5'))
+        for i, fname_curr in enumerate(fname_tfr):
+            if i == 0:
+                power_load = mne.time_frequency.read_tfrs(fname_curr)[0]
+                bad_chans = power_load.info['bads']
+                ch_list = np.asarray(power_load.info['ch_names'])
+                metadata_all.append(
+                    power_load.metadata[power_load.metadata.false_pos == 0])
+            else:
+                pow_temp = mne.time_frequency.read_tfrs(fname_curr)[0]
+                power_load.data = np.concatenate(
+                    (power_load.data, pow_temp.data), axis=0)
+                metadata_all.append(
+                    pow_temp.metadata[pow_temp.metadata.false_pos == 0])
+        metadata_list += [str(j)] * int(power_load.data.shape[0])
+
+        # Project to ROI's
+        df = pd.read_csv(
+            roi_proj_loadpath + '/' + atlas + '_' + str(j + 1).zfill(
+                2) + '_elecs2ROI.csv')
+        chan_ind_vals = np.nonzero(df.transpose().mean().values != 0)[0][
+                        1:]  # + 1
+
+        if rem_bad_chans:
+            inds2drop = []
+            for i, bad_ch in enumerate(bad_chans):
+                inds2drop.append(np.nonzero(ch_list == bad_ch)[0])
+            inds2drop = np.asarray(inds2drop)
+            if len(inds2drop) == 1:
+                inds2drop = inds2drop[0]
+
+            df.iloc[inds2drop] = 0
+            sum_vals = df.sum(axis=0).values
+            for s in range(len(sum_vals)):
+                df.iloc[:, s] = df.iloc[:, s] / sum_vals[s]
+
+        if first_pass == 0:
+            power_ROI = power_load.copy()
+            # Remove channels so have some number as good ROIs
+            n_ch = len(power_load.info['ch_names'])
+            chs_rem = power_load.info['ch_names'][len(good_rois):]
+            power_ROI.drop_channels(chs_rem)
+            first_pass = 1
+
+            for s, roi_ind in enumerate(good_rois):
+                power_tmp = power_load.copy()
+                normalized_weights = np.asarray(df.iloc[chan_ind_vals, roi_ind])
+                pow_dat_tmp = np.moveaxis(power_tmp.data, 0,
+                                          -1)  # move epochs to last dimension
+                orig_pow_shape = pow_dat_tmp.shape
+                reshaped_pow_dat = np.reshape(pow_dat_tmp, (
+                    orig_pow_shape[0], np.prod(orig_pow_shape[1:])))
+                del pow_dat_tmp
+                power_norm = np.dot(normalized_weights, reshaped_pow_dat)
+                power_ROI.data[:, s, :, :] = np.moveaxis(
+                    np.reshape(power_norm, orig_pow_shape[1:]), -1, 0)
+        else:
+            pow_dat_all_roi_tmp = np.zeros(
+                [power_load.data.shape[0], len(good_rois),
+                 power_load.data.shape[2], power_load.data.shape[3]])
+            for s, roi_ind in enumerate(good_rois):
+                power_tmp = power_load.copy()
+                normalized_weights = np.asarray(df.iloc[chan_ind_vals, roi_ind])
+                pow_dat_tmp = np.moveaxis(power_tmp.data, 0,
+                                          -1)  # move epochs to last dimension
+                orig_pow_shape = pow_dat_tmp.shape
+                reshaped_pow_dat = np.reshape(pow_dat_tmp, (
+                    orig_pow_shape[0], np.prod(orig_pow_shape[1:])))
+                del pow_dat_tmp
+                power_norm = np.dot(normalized_weights, reshaped_pow_dat)
+                pow_dat_all_roi_tmp[:, s, :, :] = np.moveaxis(
+                    np.reshape(power_norm, orig_pow_shape[1:]), -1, 0)
+
+            # Concatenate along epoch dimension
+            power_ROI.data = np.concatenate(
+                (power_ROI.data, pow_dat_all_roi_tmp), axis=0)
+
+    power_ROI._metadata = pd.DataFrame(metadata_list, columns=['patient_id'])
+    power_ROI.metadata_all = pd.concat(metadata_all)
+    # add patient_id to metadata
+    power_ROI.metadata_all[
+        'patient_index'] = power_ROI._metadata.patient_id.to_numpy(dtype=int)
+    power_ROI.metadata_all.reset_index(drop=True, inplace=True)
+    return power_ROI
