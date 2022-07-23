@@ -315,3 +315,6 @@ cython_debug/
 # skip example script
 # SEE: https://github.com/BruntonUWBio/ajile12-nwb-data/blob/main/Example_AJILE12_exploratory_analysis.ipynb
 # Example_AJILE12_exploratory_analysis.ipynb
+
+*/runs
+*/lightning_logs
