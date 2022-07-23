@@ -140,6 +140,7 @@ if __name__ == "__main__":
 
     # Initialize model and Trainer
     rae = RecurrentAutoencoder(10, 2, 2)
+    summary(rae, (1, 10, 2), device='cpu')
     # test run
     # rae.forward(torch.randn(50, 10, 2))
     trainer = pl.Trainer(max_epochs=2)
