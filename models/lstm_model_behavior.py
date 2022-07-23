@@ -58,7 +58,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
         return optimizer
 
 
-class Encoder(nn.Module):
+class Encoder(pl.LightningModule):
     def __init__(self, seq_len, n_features, embedding_dim=64):
         super(Encoder, self).__init__()
 
@@ -89,7 +89,7 @@ class Encoder(nn.Module):
         return hidden_n.reshape((batch_size, self.embedding_dim))
 
 
-class Decoder(nn.Module):
+class Decoder(pl.LightningModule):
     def __init__(self, seq_len, input_dim=64, n_features=1):
         super(Decoder, self).__init__()
 
@@ -127,6 +127,12 @@ class Decoder(nn.Module):
 
 
 if __name__ == "__main__":
+    from torchinfo import summary
+    # K = 3
+    # n_features = 2
+    # n_times = 10
+    # enc = Encoder(n_times, n_features, embedding_dim=K).to('cpu')
+    # summary(enc, input_size=(1, n_times, n_features))
     dataset = torch.randn(50, 10, 2)
     dataset_test = torch.randn(50, 10, 2)
 
@@ -136,7 +142,7 @@ if __name__ == "__main__":
     rae = RecurrentAutoencoder(10, 2, 2)
     # test run
     # rae.forward(torch.randn(50, 10, 2))
-    trainer = pl.Trainer(max_epochs=10)
+    trainer = pl.Trainer(max_epochs=2)
 
     # Perform training
     trainer.fit(rae, DataLoader(dataset, num_workers=4, pin_memory=True))
