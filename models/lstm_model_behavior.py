@@ -39,7 +39,7 @@ class RecurrentAutoencoder(pl.LightningModule):  # nn.Module
         # distance loss
         loss_dist = 0
         for (b_in, b1_out) in zip(ae_input, ae_output):
-            loss_dist += torch.norm(b_in - b1_out).mean()
+            loss_dist += torch.norm(b_in - b1_out)
 
         loss = loss_dist # cos_sim + l2_loss  # + loss_end
         return loss
