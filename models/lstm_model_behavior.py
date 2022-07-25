@@ -1,27 +1,43 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 import pytorch_lightning as pl
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
-class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
+class RecurrentAutoencoder(pl.LightningModule):  # nn.Module
     """
     Model:
     SEE: https://github.com/fabiozappo/LSTM-Autoencoder-Time-Series
     SEE: https://github.com/curiousily/Getting-Things-Done-with-Pytorch
     """
 
-    def __init__(self, seq_len, n_features, embedding_dim=64):
+    def __init__(self, seq_len, n_features, embedding_dim=64, n_layers=1):
         super(RecurrentAutoencoder, self).__init__()
 
         # Params
         self.lr = 1e-2
+        self.embedding_dim = embedding_dim
 
         # Layers
-        self.encoder = Encoder(seq_len, n_features, embedding_dim)
-        self.decoder = Decoder(seq_len, embedding_dim, n_features)
+        self.encoder = Encoder(seq_len, n_features, embedding_dim, n_layers)
+        self.decoder = Decoder(seq_len, embedding_dim, n_features, n_layers)
 
-        # loss function
-        self.f_loss = nn.L1Loss(reduction='sum')
+    def custom_loss(self, ae_input, ae_output):
+        # l1 loss
+        l1_loss = F.l1_loss(ae_input, ae_output, reduction='sum')
+
+        # maximize average cosine similarity
+        # cos_sim = 0
+        # for (b1, b2) in zip(ae_input, ae_output):
+        #     cos_sim += 1 - F.cosine_similarity(b1, b2).min()
+
+        # additional penalty for the max l1
+        # l1_loss_max = F.l1_loss(
+        #     ae_input, ae_output, reduction='none').max()
+
+        loss = l1_loss # + l1_loss_max  # cos_sim
+        return loss
 
     def forward(self, x):
         h = self.encoder(x)
@@ -33,7 +49,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
         x_hat = self.forward(x)
 
-        loss = self.f_loss(x_hat, x)
+        loss = self.custom_loss(x_hat, x)
         self.log('train_loss', loss)
         return loss
 
@@ -42,7 +58,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
         x_hat = self.forward(x)
 
-        loss = self.f_loss(x_hat, x)
+        loss = self.custom_loss(x_hat, x)
         self.log('validation_loss', loss)
         return loss
 
@@ -51,7 +67,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
         x_hat = self.forward(x)
 
-        loss = self.f_loss(x_hat, x)
+        loss = self.custom_loss(x_hat, x)
         output = dict({
             'test_loss': loss
         })
@@ -60,11 +76,18 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        return optimizer
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": ReduceLROnPlateau(optimizer),
+                "monitor": "validation_loss",
+                "frequency": 1
+            },
+        }
 
 
 class Encoder(pl.LightningModule):
-    def __init__(self, seq_len, n_features, embedding_dim=64):
+    def __init__(self, seq_len, n_features, embedding_dim=64, n_layers=1):
         super(Encoder, self).__init__()
 
         self.seq_len, self.n_features = seq_len, n_features
@@ -73,7 +96,7 @@ class Encoder(pl.LightningModule):
         self.rnn1 = nn.LSTM(
             input_size=n_features,
             hidden_size=self.hidden_dim,
-            num_layers=2,
+            num_layers=n_layers,
             batch_first=True
         )
 
@@ -95,7 +118,7 @@ class Encoder(pl.LightningModule):
 
 
 class Decoder(pl.LightningModule):
-    def __init__(self, seq_len, input_dim=64, n_features=1):
+    def __init__(self, seq_len, input_dim=64, n_features=1, n_layers=1):
         super(Decoder, self).__init__()
 
         self.seq_len, self.input_dim = seq_len, input_dim
@@ -111,7 +134,7 @@ class Decoder(pl.LightningModule):
         self.rnn2 = nn.LSTM(
             input_size=input_dim,
             hidden_size=self.hidden_dim,
-            num_layers=2,
+            num_layers=n_layers,
             batch_first=True
         )
 
