@@ -1,4 +1,6 @@
 mne==1.0.3
 numpy==1.22.4
 pytest==7.1.2
-pandas==1.0.3
+pandas~=1.4.3
+torch~=1.12.0
+torchinfo~=1.7.0

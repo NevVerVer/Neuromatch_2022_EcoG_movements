@@ -318,3 +318,4 @@ cython_debug/
 
 */runs
 */lightning_logs
+*/tb_logs
