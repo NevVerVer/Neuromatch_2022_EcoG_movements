@@ -33,10 +33,10 @@ class RecurrentAutoencoder(pl.LightningModule):  # nn.Module
         #     cos_sim += 1 - F.cosine_similarity(b1, b2).min()
 
         # additional penalty for the max l1
-        l1_loss_max = F.l1_loss(
-            ae_input, ae_output, reduction='none').max()
+        # l1_loss_max = F.l1_loss(
+        #     ae_input, ae_output, reduction='none').max()
 
-        loss = l1_loss + l1_loss_max  # cos_sim + l2_loss  # + loss_end
+        loss = l1_loss # + l1_loss_max  # cos_sim
         return loss
 
     def forward(self, x):
