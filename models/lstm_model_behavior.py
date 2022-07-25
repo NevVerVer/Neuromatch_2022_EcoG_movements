@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -22,8 +23,21 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
         self.encoder = Encoder(seq_len, n_features, embedding_dim, n_layers)
         self.decoder = Decoder(seq_len, embedding_dim, n_features, n_layers)
 
-        # loss function
-        self.f_loss = nn.L1Loss(reduction='sum')
+    def custom_loss(self, ae_input, ae_output):
+        # l2 loss
+        # l2_loss = F.mse_loss(input, input, reduction='sum')
+
+        # maximize average cosine similarity
+        cos_sim = 0
+        for (b1, b2) in zip(ae_input, ae_output):
+            cos_sim += 1 - F.cosine_similarity(b1, b2).mean()
+
+        # additional penalty for the final position
+        loss_end = F.mse_loss(ae_input[:, -1, :], ae_output[:, -1, :],
+                              reduction='sum')
+
+        loss = loss_end + cos_sim
+        return loss
 
     def forward(self, x):
         h = self.encoder(x)
@@ -35,7 +49,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
         x_hat = self.forward(x)
 
-        loss = self.f_loss(x_hat, x)
+        loss = self.custom_loss(x_hat, x)
         self.log('train_loss', loss)
         return loss
 
@@ -44,7 +58,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
         x_hat = self.forward(x)
 
-        loss = self.f_loss(x_hat, x)
+        loss = self.custom_loss(x_hat, x)
         self.log('validation_loss', loss)
         return loss
 
@@ -53,7 +67,7 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
         x_hat = self.forward(x)
 
-        loss = self.f_loss(x_hat, x)
+        loss = self.custom_loss(x_hat, x)
         output = dict({
             'test_loss': loss
         })
