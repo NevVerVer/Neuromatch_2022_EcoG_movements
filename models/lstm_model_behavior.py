@@ -24,24 +24,19 @@ class RecurrentAutoencoder(pl.LightningModule):  # nn.Module
         self.decoder = Decoder(seq_len, embedding_dim, n_features, n_layers)
 
     def custom_loss(self, ae_input, ae_output):
-        # l2 loss
-        # l2_loss = F.mse_loss(ae_input, ae_output, reduction='sum')
+        # l1 loss
+        l1_loss = F.l1_loss(ae_input, ae_output, reduction='sum')
 
         # maximize average cosine similarity
         # cos_sim = 0
         # for (b1, b2) in zip(ae_input, ae_output):
         #     cos_sim += 1 - F.cosine_similarity(b1, b2).min()
 
-        # additional penalty for the final position
-        # loss_end = F.l1_loss(ae_input[:, -1, :], ae_output[:, -1, :],
-        #                      reduction='sum')
+        # additional penalty for the max l1
+        l1_loss_max = F.l1_loss(
+            ae_input, ae_output, reduction='none').max()
 
-        # distance loss
-        loss_dist = 0
-        for (b_in, b1_out) in zip(ae_input, ae_output):
-            loss_dist += torch.norm(b_in - b1_out)
-
-        loss = loss_dist # cos_sim + l2_loss  # + loss_end
+        loss = l1_loss + l1_loss_max  # cos_sim + l2_loss  # + loss_end
         return loss
 
     def forward(self, x):
