@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
-class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
+class RecurrentAutoencoder(pl.LightningModule):  # nn.Module
     """
     Model:
     SEE: https://github.com/fabiozappo/LSTM-Autoencoder-Time-Series
@@ -25,18 +25,23 @@ class RecurrentAutoencoder(pl.LightningModule): #  nn.Module
 
     def custom_loss(self, ae_input, ae_output):
         # l2 loss
-        # l2_loss = F.mse_loss(input, input, reduction='sum')
+        # l2_loss = F.mse_loss(ae_input, ae_output, reduction='sum')
 
         # maximize average cosine similarity
-        cos_sim = 0
-        for (b1, b2) in zip(ae_input, ae_output):
-            cos_sim += 1 - F.cosine_similarity(b1, b2).mean()
+        # cos_sim = 0
+        # for (b1, b2) in zip(ae_input, ae_output):
+        #     cos_sim += 1 - F.cosine_similarity(b1, b2).min()
 
         # additional penalty for the final position
-        loss_end = F.mse_loss(ae_input[:, -1, :], ae_output[:, -1, :],
-                              reduction='sum')
+        # loss_end = F.l1_loss(ae_input[:, -1, :], ae_output[:, -1, :],
+        #                      reduction='sum')
 
-        loss = loss_end + cos_sim
+        # distance loss
+        loss_dist = 0
+        for (b_in, b1_out) in zip(ae_input, ae_output):
+            loss_dist += torch.norm(b_in - b1_out).mean()
+
+        loss = loss_dist # cos_sim + l2_loss  # + loss_end
         return loss
 
     def forward(self, x):
