@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -28,6 +29,35 @@ class LinearAutoencoder(pl.LightningModule):
 
         # loss
         self.custom_loss = nn.L1Loss(reduction='sum')
+
+    # def custom_loss(self, ae_input, ae_output):
+    #     inp = ae_input.view(ae_input.shape[0], 2, -1)
+    #     out = ae_output.view(ae_output.shape[0], 2, -1)
+    #
+    #     # l1 loss
+    #     l1_loss = F.l1_loss(inp, out, reduction='sum')
+    #
+    #     # maximize average cosine similarity
+    #     # cos_sim = 0
+    #     # for (b1, b2) in zip(ae_input, ae_output):
+    #     #     cos_sim += 1 - F.cosine_similarity(b1, b2).mean()
+    #
+    #     # loss end
+    #     l1_loss_end = F.l1_loss(
+    #         inp, out, reduction='none')[:, -1, :].sum()
+    #
+    #     # loss start
+    #     l1_loss_start = F.l1_loss(
+    #         inp, out, reduction='none')[:, 0, :].sum()
+    #
+    #     # additional penalty for the max l1
+    #     # l1_loss_max = F.l1_loss(
+    #     #     ae_input, ae_output, reduction='none').max()
+    #
+    #     # cos_sim +  # l1_loss # + l1_loss_max  # cos_sim
+    #     alpha = 0.8
+    #     loss = l1_loss * alpha + (l1_loss_end + l1_loss_start) * (1 - alpha)
+    #     return loss
 
     def forward(self, x):
         h = self.encoder(x)
