@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class LinearAutoencoder(pl.LightningModule):
-    def __init__(self, n_input):
+    def __init__(self, n_input, n_embedding=16):
         super(LinearAutoencoder, self).__init__()
 
         # parameters
@@ -13,17 +13,17 @@ class LinearAutoencoder(pl.LightningModule):
 
         # layers
         self.encoder = nn.Sequential(
-            nn.Linear(n_input, 128),
+            nn.Linear(n_input, 8*n_embedding),
             nn.ReLU(True),
-            nn.Linear(128, 64),
+            nn.Linear(8*n_embedding, 4*n_embedding),
             nn.ReLU(True),
-            nn.Linear(64, 12))
+            nn.Linear(4*n_embedding, n_embedding))
         self.decoder = nn.Sequential(
-            nn.Linear(12, 64),
+            nn.Linear(n_embedding, 4*n_embedding),
             nn.ReLU(True),
-            nn.Linear(64, 128),
+            nn.Linear(4*n_embedding, 8*n_embedding),
             nn.ReLU(True),
-            nn.Linear(128, n_input),
+            nn.Linear(8*n_embedding, n_input),
             nn.Tanh())
 
         # loss
