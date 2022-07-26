@@ -14,21 +14,28 @@ class LinearAutoencoder(pl.LightningModule):
 
         # layers
         self.encoder = nn.Sequential(
-            nn.Linear(n_input, 8*n_embedding),
+            nn.Linear(n_input, 8 * n_embedding),
+            nn.BatchNorm1d(8 * n_embedding),
             nn.ReLU(True),
-            nn.Linear(8*n_embedding, 4*n_embedding),
+            nn.Linear(8 * n_embedding, 4 * n_embedding),
+            nn.BatchNorm1d(4 * n_embedding),
             nn.ReLU(True),
-            nn.Linear(4*n_embedding, n_embedding))
+            nn.Linear(4 * n_embedding, n_embedding),
+            nn.BatchNorm1d(n_embedding))
         self.decoder = nn.Sequential(
-            nn.Linear(n_embedding, 4*n_embedding),
+            nn.Linear(n_embedding, 4 * n_embedding),
+            nn.BatchNorm1d(4 * n_embedding),
             nn.ReLU(True),
-            nn.Linear(4*n_embedding, 8*n_embedding),
+            nn.Linear(4 * n_embedding, 8 * n_embedding),
+            nn.BatchNorm1d(8 * n_embedding),
             nn.ReLU(True),
-            nn.Linear(8*n_embedding, n_input),
+            nn.Linear(8 * n_embedding, n_input),
+            nn.BatchNorm1d(n_input),
+            nn.ReLU(True),
             nn.Tanh())
 
         # loss
-        self.custom_loss = nn.L1Loss(reduction='sum')
+        self.custom_loss = nn.MSELoss()  # nn.L1Loss(reduction='sum')
 
     # def custom_loss(self, ae_input, ae_output):
     #     inp = ae_input.view(ae_input.shape[0], 2, -1)

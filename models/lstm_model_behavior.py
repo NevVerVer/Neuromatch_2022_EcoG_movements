@@ -23,7 +23,7 @@ class RecurrentAutoencoder(pl.LightningModule):  # nn.Module
         self.encoder = Encoder(seq_len, n_features, embedding_dim, n_layers)
         self.decoder = Decoder(seq_len, embedding_dim, n_features, n_layers)
 
-        self.custom_loss = nn.L1Loss(reduction='sum')
+        self.custom_loss = nn.MSELoss()  # nn.L1Loss(reduction='sum')
 
     # def custom_loss(self, ae_input, ae_output):
     #     # l1 loss
