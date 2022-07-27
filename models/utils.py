@@ -4,6 +4,7 @@ import torch
 from matplotlib import pyplot as plt
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
 from torch.utils.data import DataLoader
 
 
@@ -86,9 +87,7 @@ def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
 
     for i in range(n_plot):
         idx = torch.randint(len(data), size=())
-
-        plot_reach(ax[0, i], data, idx)
-
+        plot_reach(ax[0, i], data, idx, plot_ticks_and_labels=False)
         with torch.no_grad():
             # Get reconstructed movements from autoencoder
             recon = model(data_[idx:idx+1, :])[0]
@@ -97,17 +96,9 @@ def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
                 plot_latent_space(ax[2, i], z)
 
         plot_reach(ax[1, i], torch.swapaxes(
-            recon.reshape((2, 75)), 1, 0).unsqueeze(0), 0)
+            recon.reshape((2, 75)), 1, 0).unsqueeze(0), 0,
+                   plot_ticks_and_labels=False)
         ax[0, i].set_title(idx)
-        ax[1, i].set_title('')
-        ax[0, i].set_xticks([])
-        ax[0, i].set_yticks([])
-        ax[1, i].set_xticks([])
-        ax[1, i].set_yticks([])
-        ax[0, i].set_xlabel('')
-        ax[0, i].set_ylabel('')
-        ax[1, i].set_xlabel('')
-        ax[1, i].set_ylabel('')
 
         if i == 0:
             ax[0, i].set_ylabel('Original\nMovements')
@@ -134,16 +125,10 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
 
     for i, z_name in enumerate(z_names):
         z.sort(order=z_name)
-        # zi = z['z1'][:n_ex * 2]
-        # zi = np.concatenate([z['z1'][:n_ex], z['z1'][-n_ex:]])
         inx = np.concatenate([z['ind'][:n_ex], z['ind'][-n_ex:]])
 
         for ii in range(n_ex * 2):
-            plot_reach(ax[i, ii], data, inx[ii])
-            ax[i, ii].set_xticks([])
-            ax[i, ii].set_yticks([])
-            ax[i, ii].set_xlabel('')
-            ax[i, ii].set_ylabel('')
+            plot_reach(ax[i, ii], data, inx[ii], plot_ticks_and_labels=False)
         ax[i, 0].set_ylabel(z_name)
 
     plt.show()
@@ -157,6 +142,10 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
     with torch.no_grad():
         rec = model(data_)
         z, mu, log_var = model.encode(data_)
+
+    if z.shape[1] > 2:
+        print('Running t-SNE')
+        z = TSNE(n_components=2).fit_transform(z.numpy())
 
     if n_clusters > 0:
         kmeans = KMeans(n_clusters=n_clusters)
