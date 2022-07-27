@@ -49,15 +49,23 @@ def train_model(model,
     trainer.test(model, DataLoader(X_test, shuffle=False))
 
 
-def plot_reach(ax, data, event):
+def plot_reach(ax, data, event, plot_ticks_and_labels=True, plot_line=True):
     x = data[event, :, 0]
     y = data[event, :, 1]
-    ax.plot(x, y, '-', alpha=0.5)
+    if plot_line:
+        ax.plot(x, y, '-', alpha=0.5)
     ax.scatter(x, y, c=np.arange(len(x)), alpha=0.5)
     ax.set_aspect('equal')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_title(event)
+    if plot_ticks_and_labels:
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_title(event)
+    else:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_title('')
     # set limits
     ax.set_xlim([-1, 1])
     ax.set_ylim([-1, 1])
@@ -144,7 +152,7 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
 def plot_data_in_latent_space(model, data, n_clusters=3):
     data_ = torch.tensor(data, device='cpu', dtype=torch.float)
     data_ = torch.swapaxes(data_, 2, 1).view(data_.size(0), -1)
-
+    plt.figure(figsize=(7, 7))
 
     with torch.no_grad():
         rec = model(data_)
@@ -153,8 +161,23 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
     if n_clusters > 0:
         kmeans = KMeans(n_clusters=n_clusters)
         labels_ = kmeans.fit_predict(z)
-        plt.scatter(z[:, 0], z[:, 1], c=labels_)
+        plt.scatter(z[:, 0], z[:, 1], c=labels_, alpha=0.5)
         plt.colorbar()
+        plt.show()
+        return labels_
     else:
-        plt.scatter(z[:, 0], z[:, 1])
+        plt.scatter(z[:, 0], z[:, 1], alpha=0.5)
+        plt.show()
+        return None
+
+
+def plot_examples_from_class(labels, data, n_ex=5):
+    clusters = np.unique(labels)
+    fig, ax = plt.subplots(1, len(clusters),figsize=(20, 6))
+
+    for i, l in enumerate(clusters):
+        for ex in np.where(labels == l)[0][:n_ex]:
+            plot_reach(ax[i], data, ex, plot_ticks_and_labels=False,
+                       plot_line=False)
+        ax[i].set_title(f'Cluster {l}')
     plt.show()
