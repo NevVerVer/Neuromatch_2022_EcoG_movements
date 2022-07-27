@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -59,3 +60,37 @@ def plot_reach(ax, data, event):
     # set limits
     ax.set_xlim([-1, 1])
     ax.set_ylim([-1, 1])
+
+
+def plot_reconstruction_examples(model, data, n_examples=10):
+    n_plot = n_examples
+    fig, ax = plt.subplots(2, n_plot, figsize=(20, 6))
+    data_ = torch.tensor(data, device='cpu', dtype=torch.float)
+    data_ = torch.swapaxes(data_, 2, 1).view(data_.size(0), -1)
+
+    for i in range(n_plot):
+        idx = torch.randint(len(data), size=())
+
+        plot_reach(ax[0, i], data, idx)
+
+        with torch.no_grad():
+            # Get reconstructed movements from autoencoder
+            recon = model(data_[idx:idx+1, :])[0]
+
+        plot_reach(ax[1, i], recon.reshape((2, 75)).unsqueeze(0), 0)
+        ax[0, i].set_title(idx)
+        ax[1, i].set_title('')
+        ax[0, i].set_xticks([])
+        ax[0, i].set_yticks([])
+        ax[1, i].set_xticks([])
+        ax[1, i].set_yticks([])
+        ax[0, i].set_xlabel('')
+        ax[0, i].set_ylabel('')
+        ax[1, i].set_xlabel('')
+        ax[1, i].set_ylabel('')
+
+        if i == 0:
+            ax[0, i].set_ylabel('Original\nMovements')
+            ax[1, i].set_ylabel(f'Reconstructed\nMovements')
+
+    plt.show()
