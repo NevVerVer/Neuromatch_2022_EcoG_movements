@@ -145,6 +145,7 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
 
     if z.shape[1] > 2:
         print('Running t-SNE')
+        z_orig = z.clone()
         z = TSNE(n_components=2).fit_transform(z.numpy())
 
     if n_clusters > 0:
@@ -153,7 +154,7 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
         plt.scatter(z[:, 0], z[:, 1], c=labels_, alpha=0.5)
         plt.colorbar()
         plt.show()
-        return labels_
+        return labels_, z_orig
     else:
         plt.scatter(z[:, 0], z[:, 1], alpha=0.5)
         plt.show()
