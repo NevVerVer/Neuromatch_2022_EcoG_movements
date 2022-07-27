@@ -6,7 +6,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class LinearAutoencoder(pl.LightningModule):
-    def __init__(self, n_input, n_embedding=16):
+    def __init__(self, n_input, n_hidden=16):
         super(LinearAutoencoder, self).__init__()
 
         # parameters
@@ -14,50 +14,24 @@ class LinearAutoencoder(pl.LightningModule):
 
         # layers
         self.encoder = nn.Sequential(
-            nn.Linear(n_input, 8*n_embedding),
+            nn.Linear(n_input, 8 * n_hidden),
             nn.ReLU(True),
-            nn.Linear(8*n_embedding, 4*n_embedding),
+            nn.Linear(8 * n_hidden, 4 * n_hidden),
             nn.ReLU(True),
-            nn.Linear(4*n_embedding, n_embedding))
+            nn.Linear(4 * n_hidden, n_hidden))
         self.decoder = nn.Sequential(
-            nn.Linear(n_embedding, 4*n_embedding),
+            nn.Linear(n_hidden, 4 * n_hidden),
             nn.ReLU(True),
-            nn.Linear(4*n_embedding, 8*n_embedding),
+            nn.Linear(4 * n_hidden, 8 * n_hidden),
             nn.ReLU(True),
-            nn.Linear(8*n_embedding, n_input),
+            nn.Linear(8 * n_hidden, n_input),
             nn.Tanh())
 
         # loss
-        self.custom_loss = nn.MSELoss()  # nn.L1Loss(reduction='sum')
 
-    # def custom_loss(self, ae_input, ae_output):
-    #     inp = ae_input.view(ae_input.shape[0], 2, -1)
-    #     out = ae_output.view(ae_output.shape[0], 2, -1)
-    #
-    #     # l1 loss
-    #     l1_loss = F.l1_loss(inp, out, reduction='sum')
-    #
-    #     # maximize average cosine similarity
-    #     # cos_sim = 0
-    #     # for (b1, b2) in zip(ae_input, ae_output):
-    #     #     cos_sim += 1 - F.cosine_similarity(b1, b2).mean()
-    #
-    #     # loss end
-    #     l1_loss_end = F.l1_loss(
-    #         inp, out, reduction='none')[:, -1, :].sum()
-    #
-    #     # loss start
-    #     l1_loss_start = F.l1_loss(
-    #         inp, out, reduction='none')[:, 0, :].sum()
-    #
-    #     # additional penalty for the max l1
-    #     # l1_loss_max = F.l1_loss(
-    #     #     ae_input, ae_output, reduction='none').max()
-    #
-    #     # cos_sim +  # l1_loss # + l1_loss_max  # cos_sim
-    #     alpha = 0.8
-    #     loss = l1_loss * alpha + (l1_loss_end + l1_loss_start) * (1 - alpha)
-    #     return loss
+    def loss_function(self, recons, input):
+        loss = F.mse_loss(recons, input)
+        return loss
 
     def forward(self, x):
         h = self.encoder(x)
@@ -69,7 +43,7 @@ class LinearAutoencoder(pl.LightningModule):
 
         x_hat = self.forward(x)
 
-        loss = self.custom_loss(x_hat, x)
+        loss = self.loss_function(x_hat, x)
         self.log('train_loss', loss)
         return loss
 
@@ -78,7 +52,7 @@ class LinearAutoencoder(pl.LightningModule):
 
         x_hat = self.forward(x)
 
-        loss = self.custom_loss(x_hat, x)
+        loss = self.loss_function(x_hat, x)
         self.log('validation_loss', loss)
         return loss
 
@@ -87,7 +61,7 @@ class LinearAutoencoder(pl.LightningModule):
 
         x_hat = self.forward(x)
 
-        loss = self.custom_loss(x_hat, x)
+        loss = self.loss_function(x_hat, x)
         output = dict({
             'test_loss': loss
         })
@@ -104,3 +78,65 @@ class LinearAutoencoder(pl.LightningModule):
                 "frequency": 1
             },
         }
+
+
+class LinearVariationalAutoencoder(LinearAutoencoder):
+    def __init__(self, n_input, n_hidden=16, n_latent=5, beta: int = 4,
+                 gamma: float = 1000.,  max_capacity: int = 25,
+                 Capacity_max_iter: int = 1e5, loss_type: str = 'B'):
+        super(LinearAutoencoder, self).__init__(n_input, n_hidden)
+
+        self.beta = beta
+        self.gamma = gamma
+        self.loss_type = loss_type
+        self.C_max = torch.Tensor([max_capacity])
+        self.C_stop_iter = Capacity_max_iter
+
+        self.fc_mu = nn.Linear(n_hidden, n_latent)
+        self.fc_var = nn.Linear(n_hidden, n_latent)
+
+    def forward(self, input):
+        result = self.encoder(input)
+
+        mean = self.mean_layer(result)
+        log_var = self.std_layer(result)
+
+        z = self.reparameterize(mean, log_var)
+
+        return [self.decoder(z), input, mean, log_var]
+
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu
+
+    def loss_function(self, *args, **kwargs):
+        # SEE: https://github.com/AntixK/PyTorch-VAE
+        self.num_iter += 1
+        recons = args[0]
+        inp = args[1]
+        mu = args[2]
+        log_var = args[3]
+        # Account for the minibatch samples from the dataset
+        kld_weight = kwargs['M_N']
+
+        recons_loss = F.mse_loss(recons, inp)
+
+        kld_loss = torch.mean(
+            -0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1),
+            dim=0)
+
+        # https://openreview.net/forum?id=Sy2fzU9gl
+        if self.loss_type == 'H':
+            loss = recons_loss + self.beta * kld_weight * kld_loss
+
+        # https://arxiv.org/pdf/1804.03599.pdf
+        elif self.loss_type == 'B':
+            self.C_max = self.C_max.to(inp.device)
+            C = torch.clamp(self.C_max / self.C_stop_iter * self.num_iter, 0,
+                            self.C_max.data[0])
+            loss = recons_loss + self.gamma * kld_weight * (kld_loss - C).abs()
+        else:
+            raise ValueError('Undefined loss type.')
+
+        return loss
