@@ -62,9 +62,17 @@ def plot_reach(ax, data, event):
     ax.set_ylim([-1, 1])
 
 
+def plot_latent_space(ax, z):
+    ax.bar(np.arange(z.shape[1]), z[0, :])
+    ax.set_aspect('equal')
+    ax.set_xlabel('Latent Space (z)')
+    ax.set_ylim([-2, 2])
+
+
+
 def plot_reconstruction_examples(model, data, n_examples=10):
     n_plot = n_examples
-    fig, ax = plt.subplots(2, n_plot, figsize=(20, 6))
+    fig, ax = plt.subplots(3, n_plot, figsize=(20, 6))
     data_ = torch.tensor(data, device='cpu', dtype=torch.float)
     data_ = torch.swapaxes(data_, 2, 1).view(data_.size(0), -1)
 
@@ -76,6 +84,7 @@ def plot_reconstruction_examples(model, data, n_examples=10):
         with torch.no_grad():
             # Get reconstructed movements from autoencoder
             recon = model(data_[idx:idx+1, :])[0]
+            z, mu, log_var = model.encode(data_[idx:idx+1, :])
 
         plot_reach(ax[1, i], torch.swapaxes(
             recon.reshape((2, 75)), 1, 0).unsqueeze(0), 0)
@@ -89,6 +98,8 @@ def plot_reconstruction_examples(model, data, n_examples=10):
         ax[0, i].set_ylabel('')
         ax[1, i].set_xlabel('')
         ax[1, i].set_ylabel('')
+
+        plot_latent_space(ax[2, i], z)
 
         if i == 0:
             ax[0, i].set_ylabel('Original\nMovements')
