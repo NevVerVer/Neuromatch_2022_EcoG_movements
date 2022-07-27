@@ -1,3 +1,5 @@
+import numpy as np
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from pytorch_lightning.loggers import TensorBoardLogger
 import pytorch_lightning as pl
@@ -10,7 +12,9 @@ def train_model(model,
                 n_epochs=20,
                 batch_size=20,
                 add_to_log_name=None,
-                accumulate_grad_batches={0: 8, 4: 4, 8: 1}):
+                accumulate_grad_batches=None):
+    if accumulate_grad_batches is None:
+        accumulate_grad_batches = {0: 8, 4: 4, 8: 1}
     if add_to_log_name is None:
         add_to_log_name = ['n_latent', 'lr']
 
@@ -41,3 +45,17 @@ def train_model(model,
 
     # Perform evaluation
     trainer.test(model, DataLoader(X_test, shuffle=False))
+
+
+def plot_reach(ax, data, event):
+    x = data[event, :, 0]
+    y = data[event, :, 1]
+    ax.plot(x, y, '-', alpha=0.5)
+    ax.scatter(x, y, c=np.arange(len(x)), alpha=0.5)
+    ax.set_aspect('equal')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title(event)
+    # set limits
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([-1, 1])
