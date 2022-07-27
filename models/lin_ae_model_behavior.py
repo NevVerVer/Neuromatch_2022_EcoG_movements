@@ -6,11 +6,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class LinearAutoencoder(pl.LightningModule):
-    def __init__(self, n_input, n_hidden=16):
+    def __init__(self, n_input, n_hidden: int = 16, lr: float = 1e-2):
         super(LinearAutoencoder, self).__init__()
 
         # parameters
-        self.lr = 1e-2
+        self.lr = lr
 
         # layers
         self.encoder = nn.Sequential(
@@ -28,7 +28,6 @@ class LinearAutoencoder(pl.LightningModule):
             nn.Tanh())
 
         # loss
-
     def loss_function(self, recons, input):
         loss = F.mse_loss(recons, input)
         return loss
@@ -81,10 +80,10 @@ class LinearAutoencoder(pl.LightningModule):
 
 
 class LinearVariationalAutoencoder(LinearAutoencoder):
-    def __init__(self, n_input, n_hidden=16, n_latent=5, beta: int = 4,
-                 gamma: float = 1000.,  max_capacity: int = 25,
+    def __init__(self, n_input, n_hidden: int = 16, n_latent: int = 5,
+                 beta: int = 4, gamma: float = 1000.,  max_capacity: int = 25,
                  Capacity_max_iter: int = 1e5, loss_type: str = 'B'):
-        super(LinearAutoencoder, self).__init__(n_input, n_hidden)
+        super(LinearVariationalAutoencoder, self).__init__(n_input, n_hidden)
 
         self.beta = beta
         self.gamma = gamma
@@ -94,19 +93,26 @@ class LinearVariationalAutoencoder(LinearAutoencoder):
 
         self.fc_mu = nn.Linear(n_hidden, n_latent)
         self.fc_var = nn.Linear(n_hidden, n_latent)
+        self.decoder_inp = nn.Linear(n_latent, n_hidden)
 
-    def forward(self, input):
-        result = self.encoder(input)
+    def forward(self, inp):
+        result = self.encoder(inp)
 
-        mean = self.mean_layer(result)
-        log_var = self.std_layer(result)
+        # estimate the mean and the log variance (latent space)
+        mean = self.fc_mu(result)
+        log_var = self.fc_var(result)
 
+        # re-parameterization trick
         z = self.reparameterize(mean, log_var)
 
-        return [self.decoder(z), input, mean, log_var]
+        # from the latent space to decoder
+        input_decoder = self.decoder_inp(z)
 
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
+        return [self.decoder(input_decoder), inp, mean, log_var]
+
+    @staticmethod
+    def reparameterize(mu, log_var):
+        std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
         return eps * std + mu
 
@@ -140,3 +146,9 @@ class LinearVariationalAutoencoder(LinearAutoencoder):
             raise ValueError('Undefined loss type.')
 
         return loss
+
+
+if __name__ == "__main__":
+    from torchsummary import summary
+    model = LinearVariationalAutoencoder(75 * 2)
+    summary(model, (1, 75 * 2))
