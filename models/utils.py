@@ -1,9 +1,10 @@
 import numpy as np
+import pytorch_lightning as pl
 import torch
 from matplotlib import pyplot as plt
-from torch.utils.data import DataLoader
 from pytorch_lightning.loggers import TensorBoardLogger
-import pytorch_lightning as pl
+from sklearn.cluster import KMeans
+from torch.utils.data import DataLoader
 
 
 def train_model(model,
@@ -137,4 +138,23 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
             ax[i, ii].set_ylabel('')
         ax[i, 0].set_ylabel(z_name)
 
+    plt.show()
+
+
+def plot_data_in_latent_space(model, data, n_clusters=3):
+    data_ = torch.tensor(data, device='cpu', dtype=torch.float)
+    data_ = torch.swapaxes(data_, 2, 1).view(data_.size(0), -1)
+
+
+    with torch.no_grad():
+        rec = model(data_)
+        z, mu, log_var = model.encode(data_)
+
+    if n_clusters > 0:
+        kmeans = KMeans(n_clusters=n_clusters)
+        labels_ = kmeans.fit_predict(z)
+        plt.scatter(z[:, 0], z[:, 1], c=labels_)
+        plt.colorbar()
+    else:
+        plt.scatter(z[:, 0], z[:, 1])
     plt.show()
