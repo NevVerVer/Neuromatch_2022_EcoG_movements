@@ -94,7 +94,7 @@ class LinearVariationalAutoencoder(LinearAutoencoder):
         self.fc_var = nn.Linear(n_hidden, n_latent)
         self.decoder_inp = nn.Linear(n_latent, n_hidden)
 
-    def forward(self, inp):
+    def encode(self, inp):
         result = self.encoder(inp)
 
         # estimate the mean and the log variance (latent space)
@@ -104,10 +104,15 @@ class LinearVariationalAutoencoder(LinearAutoencoder):
         # re-parameterization trick
         z = self.reparameterize(mean, log_var)
 
+        return [z, mean, log_var]
+
+    def forward(self, inp):
+        z, mu, log_var = self.encode(inp)
+
         # from the latent space to decoder
         input_decoder = self.decoder_inp(z)
 
-        return [self.decoder(input_decoder), inp, mean, log_var]
+        return [self.decoder(input_decoder), inp, mu, log_var]
 
     @staticmethod
     def reparameterize(mu, log_var):
