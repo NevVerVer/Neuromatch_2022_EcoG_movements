@@ -28,39 +28,32 @@ class LinearAutoencoder(pl.LightningModule):
             nn.Tanh())
 
         # loss
-    def loss_function(self, recons, input):
-        loss = F.mse_loss(recons, input)
+    def loss_function(self, *args):
+        recons = args[0]
+        inp = args[1]
+        loss = F.mse_loss(recons, inp)
         return loss
 
     def forward(self, x):
         h = self.encoder(x)
-        x = self.decoder(h)
-        return x
+        x_hat = self.decoder(h)
+        return [x_hat, x]
 
     def training_step(self, batch, batch_idx):
         x = batch
-
-        x_hat = self.forward(x)
-
-        loss = self.loss_function(x_hat, x)
+        loss = self.loss_function(*self.forward(x))
         self.log('train_loss', loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x = batch
-
-        x_hat = self.forward(x)
-
-        loss = self.loss_function(x_hat, x)
+        loss = self.loss_function(*self.forward(x))
         self.log('validation_loss', loss)
         return loss
 
     def test_step(self, batch, batch_idx):
         x = batch
-
-        x_hat = self.forward(x)
-
-        loss = self.loss_function(x_hat, x)
+        loss = self.loss_function(*self.forward(x))
         output = dict({
             'test_loss': loss
         })
@@ -80,9 +73,12 @@ class LinearAutoencoder(pl.LightningModule):
 
 
 class LinearVariationalAutoencoder(LinearAutoencoder):
+    num_iter = 0  # Global static variable to keep track of iterations
+
     def __init__(self, n_input, n_hidden: int = 16, n_latent: int = 5,
                  beta: int = 4, gamma: float = 1000.,  max_capacity: int = 25,
-                 Capacity_max_iter: int = 1e5, loss_type: str = 'B'):
+                 Capacity_max_iter: int = 1e5, loss_type: str = 'B',
+                 kld_weight: float = 0.00025):
         super(LinearVariationalAutoencoder, self).__init__(n_input, n_hidden)
 
         self.beta = beta
@@ -90,6 +86,8 @@ class LinearVariationalAutoencoder(LinearAutoencoder):
         self.loss_type = loss_type
         self.C_max = torch.Tensor([max_capacity])
         self.C_stop_iter = Capacity_max_iter
+        self.kld_weight = kld_weight
+        self.n_latent = n_latent
 
         self.fc_mu = nn.Linear(n_hidden, n_latent)
         self.fc_var = nn.Linear(n_hidden, n_latent)
@@ -124,7 +122,7 @@ class LinearVariationalAutoencoder(LinearAutoencoder):
         mu = args[2]
         log_var = args[3]
         # Account for the minibatch samples from the dataset
-        kld_weight = kwargs['M_N']
+        kld_weight = self.kld_weight
 
         recons_loss = F.mse_loss(recons, inp)
 
@@ -152,3 +150,6 @@ if __name__ == "__main__":
     from torchsummary import summary
     model = LinearVariationalAutoencoder(75 * 2)
     summary(model, (1, 75 * 2))
+
+    model.forward(torch.randn(1, 75 * 2))
+    model.training_step(torch.randn(1, 75 * 2), 0)
