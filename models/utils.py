@@ -77,7 +77,8 @@ def plot_reconstruction_examples(model, data, n_examples=10):
             # Get reconstructed movements from autoencoder
             recon = model(data_[idx:idx+1, :])[0]
 
-        plot_reach(ax[1, i], recon.reshape((75, 2)).unsqueeze(0), 0)
+        plot_reach(ax[1, i], torch.swapaxes(
+            recon.reshape((2, 75)), 1, 0).unsqueeze(0), 0)
         ax[0, i].set_title(idx)
         ax[1, i].set_title('')
         ax[0, i].set_xticks([])
