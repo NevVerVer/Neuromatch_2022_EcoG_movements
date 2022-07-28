@@ -1,7 +1,11 @@
+import os
+import random
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from matplotlib import pyplot as plt
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
@@ -15,7 +19,13 @@ def train_model(model,
                 n_epochs=20,
                 batch_size=20,
                 add_to_log_name=None,
-                accumulate_grad_batches=None):
+                accumulate_grad_batches=None,
+                seed=42):
+    set_seed(seed=seed)
+    pl.seed_everything(seed, True)
+    g_seed = torch.Generator()
+    g_seed.manual_seed(seed)
+
     if accumulate_grad_batches is None:
         accumulate_grad_batches = {0: 8, 4: 4, 8: 1}
     if add_to_log_name is None:
@@ -36,18 +46,31 @@ def train_model(model,
         max_epochs=n_epochs,
         accelerator='mps',
         logger=logger,
+        callbacks=[
+            LearningRateMonitor(),
+            ModelCheckpoint(
+                save_top_k=2,
+                dirpath=os.path.join(logger.log_dir, "checkpoints"),
+                monitor="validation_loss",
+                save_last=True),
+        ],
         accumulate_grad_batches=accumulate_grad_batches
     )
 
     # Perform training
     trainer.fit(
         model,
-        DataLoader(X_train, batch_size=batch_size, shuffle=True),
-        DataLoader(X_val, batch_size=batch_size, shuffle=False)
+        DataLoader(X_train, batch_size=batch_size, shuffle=True,
+                   worker_init_fn=seed_worker, generator=g_seed,
+                   pin_memory=True),
+        DataLoader(X_val, batch_size=batch_size, shuffle=False,
+                   worker_init_fn=seed_worker, generator=g_seed,
+                   pin_memory=True)
     )
 
     # Perform evaluation
-    trainer.test(model, DataLoader(X_test, shuffle=False))
+    trainer.test(model, DataLoader(
+        X_test, shuffle=False, worker_init_fn=seed_worker, generator=g_seed))
 
 
 def plot_reach(ax, data, event, plot_ticks_and_labels=True, plot_line=True):
@@ -90,9 +113,9 @@ def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
         plot_reach(ax[0, i], data, idx, plot_ticks_and_labels=False)
         with torch.no_grad():
             # Get reconstructed movements from autoencoder
-            recon = model(data_[idx:idx+1, :])[0]
+            recon = model(data_[idx:idx + 1, :])[0]
             if plot_latent:
-                z, mu, log_var = model.encode(data_[idx:idx+1, :])
+                z, mu, log_var = model.encode(data_[idx:idx + 1, :])
                 plot_latent_space(ax[2, i], z)
 
         plot_reach(ax[1, i], torch.swapaxes(
@@ -121,7 +144,7 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
 
     z = np.core.records.fromarrays(
         [np.arange(z.shape[0])] + [zi for zi in z.T],
-        names='ind,'+','.join(z_names))
+        names='ind,' + ','.join(z_names))
 
     for i, z_name in enumerate(z_names):
         z.sort(order=z_name)
@@ -134,7 +157,7 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
     plt.show()
 
 
-def plot_data_in_latent_space(model, data, n_clusters=3):
+def plot_data_in_latent_space(model, data, n_clusters=3, seed=42):
     data_ = torch.tensor(data, device='cpu', dtype=torch.float)
     data_ = torch.swapaxes(data_, 2, 1).view(data_.size(0), -1)
     plt.figure(figsize=(7, 7))
@@ -143,10 +166,11 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
         rec = model(data_)
         z, mu, log_var = model.encode(data_)
 
+    z_orig = z.clone()
     if z.shape[1] > 2:
         print('Running t-SNE')
-        z_orig = z.clone()
-        z = TSNE(n_components=2).fit_transform(z.numpy())
+        z = TSNE(n_components=2, random_state=seed, init='pca').fit_transform(
+            z.numpy())
 
     if n_clusters > 0:
         kmeans = KMeans(n_clusters=n_clusters)
@@ -163,7 +187,7 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
 
 def plot_examples_from_class(labels, data, n_ex=5):
     clusters = np.unique(labels)
-    fig, ax = plt.subplots(1, len(clusters),figsize=(20, 6))
+    fig, ax = plt.subplots(1, len(clusters), figsize=(20, 6))
 
     for i, l in enumerate(clusters):
         for ex in np.where(labels == l)[0][:n_ex]:
@@ -171,3 +195,52 @@ def plot_examples_from_class(labels, data, n_ex=5):
                        plot_line=False)
         ax[i].set_title(f'Cluster {l}')
     plt.show()
+
+
+def set_seed(seed=None, seed_torch=True):
+    """
+    Function that controls randomness. NumPy and random modules must be imported.
+
+    Args:
+      seed : Integer
+        A non-negative integer that defines the random state. Default is `None`.
+      seed_torch : Boolean
+        If `True` sets the random seed for pytorch tensors, so pytorch module
+        must be imported. Default is `True`.
+
+    Returns:
+      Nothing.
+    """
+    if seed is None:
+        seed = np.random.choice(2 ** 32)
+    random.seed(seed)
+    np.random.seed(seed)
+    if seed_torch:
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.cuda.manual_seed(seed)
+        # torch.mps.seed(seed)
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+
+    print(f'Random seed {seed} has been set.')
+
+
+# In case that `DataLoader` is used
+def seed_worker(worker_id):
+    """
+    DataLoader will reseed workers following randomness in
+    multi-process data loading algorithm.
+
+    Args:
+      worker_id: integer
+        ID of subprocess to seed. 0 means that
+        the data will be loaded in the main process
+        Refer: https://pytorch.org/docs/stable/data.html#data-loading-randomness for more details
+
+    Returns:
+      Nothing
+    """
+    worker_seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
