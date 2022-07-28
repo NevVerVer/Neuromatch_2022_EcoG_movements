@@ -244,3 +244,32 @@ def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
+
+
+def plot_grid_z(model, n_latent=4, z_ids=(0, 1), n_ex=5, max_z=2):
+
+    mg = np.meshgrid(np.linspace(-max_z, max_z, n_ex),
+                     np.linspace(-max_z, max_z, n_ex))
+    fig, ax = plt.subplots(n_ex, n_ex, figsize=(15, 15))
+
+    z = np.zeros(n_latent)
+    z = torch.tensor(z, device='cpu', dtype=torch.float)
+
+    for i in range(n_ex):
+        for j in range(n_ex):
+            z1 = mg[0][i, j]
+            z2 = mg[1][i, j]
+
+            z[z_ids[0]] = mg[0][i, j]
+            z[z_ids[1]] = mg[1][i, j]
+
+            with torch.no_grad():
+                sample = model.decoder(model.decoder_inp(z))
+
+            plot_reach(ax[i, j], torch.swapaxes(
+                sample.reshape((2, 75)), 1, 0).unsqueeze(0), 0,
+                       plot_ticks_and_labels=False)
+
+            ax[i, j].set_title(
+                f'z{z_ids[0] + 1}={z1:.1f}, z{z_ids[1] + 1}={z2:.1f}')
+    plt.show()
