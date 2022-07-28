@@ -1,7 +1,10 @@
+import os
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from matplotlib import pyplot as plt
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
@@ -36,6 +39,14 @@ def train_model(model,
         max_epochs=n_epochs,
         accelerator='mps',
         logger=logger,
+        callbacks=[
+            LearningRateMonitor(),
+            ModelCheckpoint(
+                save_top_k=2,
+                dirpath=os.path.join(logger.log_dir, "checkpoints"),
+                monitor="val_loss",
+                save_last=True),
+        ],
         accumulate_grad_batches=accumulate_grad_batches
     )
 
@@ -90,9 +101,9 @@ def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
         plot_reach(ax[0, i], data, idx, plot_ticks_and_labels=False)
         with torch.no_grad():
             # Get reconstructed movements from autoencoder
-            recon = model(data_[idx:idx+1, :])[0]
+            recon = model(data_[idx:idx + 1, :])[0]
             if plot_latent:
-                z, mu, log_var = model.encode(data_[idx:idx+1, :])
+                z, mu, log_var = model.encode(data_[idx:idx + 1, :])
                 plot_latent_space(ax[2, i], z)
 
         plot_reach(ax[1, i], torch.swapaxes(
@@ -121,7 +132,7 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
 
     z = np.core.records.fromarrays(
         [np.arange(z.shape[0])] + [zi for zi in z.T],
-        names='ind,'+','.join(z_names))
+        names='ind,' + ','.join(z_names))
 
     for i, z_name in enumerate(z_names):
         z.sort(order=z_name)
@@ -134,7 +145,7 @@ def plot_examples_based_on_latent_space(model, data, n_ex=5):
     plt.show()
 
 
-def plot_data_in_latent_space(model, data, n_clusters=3):
+def plot_data_in_latent_space(model, data, n_clusters=3, seed=42):
     data_ = torch.tensor(data, device='cpu', dtype=torch.float)
     data_ = torch.swapaxes(data_, 2, 1).view(data_.size(0), -1)
     plt.figure(figsize=(7, 7))
@@ -143,10 +154,11 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
         rec = model(data_)
         z, mu, log_var = model.encode(data_)
 
+    z_orig = z.clone()
     if z.shape[1] > 2:
         print('Running t-SNE')
-        z_orig = z.clone()
-        z = TSNE(n_components=2).fit_transform(z.numpy())
+        z = TSNE(n_components=2, random_state=seed, init='pca').fit_transform(
+            z.numpy())
 
     if n_clusters > 0:
         kmeans = KMeans(n_clusters=n_clusters)
@@ -163,7 +175,7 @@ def plot_data_in_latent_space(model, data, n_clusters=3):
 
 def plot_examples_from_class(labels, data, n_ex=5):
     clusters = np.unique(labels)
-    fig, ax = plt.subplots(1, len(clusters),figsize=(20, 6))
+    fig, ax = plt.subplots(1, len(clusters), figsize=(20, 6))
 
     for i, l in enumerate(clusters):
         for ex in np.where(labels == l)[0][:n_ex]:
