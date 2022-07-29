@@ -26,8 +26,6 @@ Code to view and to open the data is available [here](https://github.com/Brunton
 
 ![](blog/main_idea.png)
 
-[TODO: ADD general idea picture from the slides]
-
 ## Decoding movements
 
 Using the [dataset](https://figshare.com/projects/Generalized_neural_decoders_for_transfer_learning_across_participants_and_recording_modalities/90287) from [this paper](https://iopscience.iop.org/article/10.1088/1741-2552/abda0b) it is possible to solve movement/no-movement classification task. The corresponding jupyter-notebook can be found at "./models/Baseline-Classification-Model". Over 95% accuracy was achieved on spectral features, suggesting their importance for decoding movements.
