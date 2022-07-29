@@ -26,13 +26,20 @@ Code to view and to open the data is available [here](https://github.com/Brunton
 
 ## VAE for Reaches
 
+Examples of preprocessed movements:
 <img src="blog/reaches_analysis/reach_examples.gif" width="200"/>
 
+Examples of the VAE reconstructions:
+![](blog/reaches_analysis/reconstruction_examples.png)
 
+
+What the latent space encodes? 🤔
 <img src="blog/reaches_analysis/reach_z_values.gif" width="200"/>
 
 ## Reconstruction based on DnCNN predictions
+![](blog/dncnn/reconstruction_pipeline.png)
 
+![](blog/dncnn/latent_space_reconstruction.png)
 
 
 ![](blog/bottom.png)
