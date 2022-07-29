@@ -24,6 +24,8 @@ Code to view and to open the data is available [here](https://github.com/Brunton
 
 [TODO: ADD PICTURE FROM THE PRESENTATION - 1st slide]
 
+![](blog/main_idea.png)
+
 [TODO: ADD general idea picture from the slides]
 
 ## Decoding movements
