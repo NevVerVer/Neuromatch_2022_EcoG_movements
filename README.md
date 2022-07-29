@@ -4,9 +4,9 @@
  - The bigger picture 🌌
  - [Dataset 🧠](#Dataset)
  - Step 1: Decoding movements
-   - [Decoding movements](#)
-   - [Decoding hand](#)
-   - [Decoding movement angle](#)
+   - [Decoding movements](#decoding-movements)
+   - [Decoding hand](#keras-to-pytorch-oh-my)
+   - [Decoding movement angle](#decoding-movement-angle)
  - Step 2: Build low-dimensional representations
    - [Low-dimensional representation of ECoG data](#)
    - [Low-dimensional representation of behavioral data](#vae-for-reaches)
@@ -22,19 +22,27 @@ Datasets are available [here](https://dandiarchive.org/dandiset/000055/0.220127.
 
 Code to view and to open the data is available [here](https://github.com/BruntonUWBio/ajile12-nwb-data).
 
+## Decoding movements
+
+## Keras to Pytorch, Oh My!
+
+## Decoding movement angle
 
 
 ## VAE for Reaches
 
 Examples of preprocessed movements:
-<img src="blog/reaches_analysis/reach_examples.gif" width="200"/>
+
+<img src="blog/reaches_analysis/reach_examples.gif" width="300" align="center"/>
 
 Examples of the VAE reconstructions:
+
 ![](blog/reaches_analysis/reconstruction_examples.png)
 
 
 What the latent space encodes? 🤔
-<img src="blog/reaches_analysis/reach_z_values.gif" width="200"/>
+
+<img src="blog/reaches_analysis/reach_z_values.gif" width="400" align="center"/>
 
 ## Reconstruction based on DnCNN predictions
 ![](blog/dncnn/reconstruction_pipeline.png)
