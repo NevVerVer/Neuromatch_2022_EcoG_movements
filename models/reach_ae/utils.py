@@ -247,7 +247,6 @@ def seed_worker(worker_id):
 
 
 def plot_grid_z(model, n_latent=4, z_ids=(0, 1), n_ex=5, max_z=2):
-
     mg = np.meshgrid(np.linspace(-max_z, max_z, n_ex),
                      np.linspace(-max_z, max_z, n_ex))
     fig, ax = plt.subplots(n_ex, n_ex, figsize=(15, 15))
@@ -272,4 +271,37 @@ def plot_grid_z(model, n_latent=4, z_ids=(0, 1), n_ex=5, max_z=2):
 
             ax[i, j].set_title(
                 f'z{z_ids[0] + 1}={z1:.1f}, z{z_ids[1] + 1}={z2:.1f}')
+    plt.show()
+
+
+def plot_dncnn_predictions(model, z_prediction, z_prediction_ids, data, n_ex=5,
+                           events_to_plot=None):
+    fig, ax = plt.subplots(2, n_ex, figsize=(15, 4))
+
+    if events_to_plot is None:
+        indices = np.random.choice(np.arange(z_prediction_ids.shape[0]),
+                                   size=n_ex, replace=False)
+    else:
+        indices = [np.where(z_prediction_ids == i)[0][0] for i in
+                   events_to_plot]
+
+    z_prediction = torch.tensor(z_prediction, device='cpu', dtype=torch.float)
+
+    for n, ind in enumerate(indices):
+        with torch.no_grad():
+            sample = model.decoder(model.decoder_inp(
+                z_prediction[ind].squeeze(0)))
+
+        plot_reach(ax[1, n], torch.swapaxes(
+            sample.reshape((2, 75)), 1, 0).unsqueeze(0), 0,
+                   plot_ticks_and_labels=False)
+
+        plot_reach(ax[0, n], data, z_prediction_ids[ind],
+                   plot_ticks_and_labels=False)
+        ax[0, n].set_title(f'Event № {z_prediction_ids[ind]}')
+
+        if n == 0:
+            ax[0, n].set_ylabel('Original\nMovements')
+            ax[1, n].set_ylabel(f'Reconstructed\nMovements')
+
     plt.show()
