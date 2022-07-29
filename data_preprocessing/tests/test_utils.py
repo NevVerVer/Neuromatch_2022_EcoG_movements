@@ -4,7 +4,7 @@ from mne.io.meas_info import create_info
 import numpy as np
 import mne
 
-from pipeline.utils import prepare_tfr_data
+from data_preprocessing.utils import prepare_tfr_data
 
 
 def test_prepare_tfr_data():
