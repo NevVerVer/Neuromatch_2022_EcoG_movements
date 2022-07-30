@@ -50,7 +50,7 @@ We tried to construct an encoder-decoder network based on time-frequency feature
    <img src="blog/ecog_autoencoder/tfrs_ae.png" alt="">
 </p>
 
-The PCA, fully-connected and deep convolutional autoencoders for squeezing high-dimensional time-frequency data can be found at [`\models\Handmade-TF-Autoencoder\`](./models/Handmade-TF-Autoencoder).
+The PCA, fully-connected and deep convolutional autoencoders for squeezing high-dimensional time-frequency data can be found at [`\models\Handmade-TF-Autoencoder\`](./models/Handmade-TF-autoencoder).
 Further development is based on the idea that deep convolutional autoencoder is not able to learn due to gradient vanishing and underfitting.
 
 
@@ -104,12 +104,16 @@ What the latent space encodes? 🤔
 
 
 ## Reconstruction based on DnCNN predictions
-![](blog/dncnn/reconstruction_pipeline.png)
+<p align="center">
+   <img src="blog/dncnn/reconstruction_pipeline.png" alt="">
+</p>
+<p align="center">
+   <i>Pipeline of movement low-dimensional representation reconstruction from ECoG</i>
+</p>
 
 <p align="center">
    <img src="blog/dncnn/latent_space_reconstruction.png" alt="">
 </p>
-
 <p align="center">
    <i>Movement reconstruction from the decoded latent space values</i>
 </p>
