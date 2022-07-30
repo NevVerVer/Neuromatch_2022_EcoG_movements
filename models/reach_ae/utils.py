@@ -73,13 +73,13 @@ def train_model(model,
         X_test, shuffle=False, worker_init_fn=seed_worker, generator=g_seed))
 
 
-def plot_reach(ax, data, event, plot_ticks_and_labels=True, plot_line=True):
+def plot_reach(ax, data, event, plot_ticks_and_labels=True, plot_line=True,
+               set_lims=True):
     x = data[event, :, 0]
     y = data[event, :, 1]
     if plot_line:
         ax.plot(x, y, '-', alpha=0.5)
     ax.scatter(x, y, c=np.arange(len(x)), alpha=0.5)
-    ax.set_aspect('equal')
     if plot_ticks_and_labels:
         ax.set_xlabel('x')
         ax.set_ylabel('y')
@@ -91,8 +91,10 @@ def plot_reach(ax, data, event, plot_ticks_and_labels=True, plot_line=True):
         ax.set_ylabel('')
         ax.set_title('')
     # set limits
-    ax.set_xlim([-1, 1])
-    ax.set_ylim([-1, 1])
+    if set_lims:
+        ax.set_aspect('equal')
+        ax.set_xlim([-1, 1])
+        ax.set_ylim([-1, 1])
 
 
 def plot_latent_space(ax, z):
@@ -102,7 +104,8 @@ def plot_latent_space(ax, z):
     ax.set_ylim([-2, 2])
 
 
-def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
+def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False,
+                                 set_lims=True):
     n_plot = n_examples
     fig, ax = plt.subplots(3 if plot_latent else 2, n_plot, figsize=(20, 6))
     data_ = torch.tensor(data, device='cpu', dtype=torch.float)
@@ -110,7 +113,8 @@ def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
 
     for i in range(n_plot):
         idx = torch.randint(len(data), size=())
-        plot_reach(ax[0, i], data, idx, plot_ticks_and_labels=False)
+        plot_reach(ax[0, i], data, idx, plot_ticks_and_labels=False,
+                   set_lims=set_lims)
         with torch.no_grad():
             # Get reconstructed movements from autoencoder
             recon = model(data_[idx:idx + 1, :])[0]
@@ -120,7 +124,7 @@ def plot_reconstruction_examples(model, data, n_examples=10, plot_latent=False):
 
         plot_reach(ax[1, i], torch.swapaxes(
             recon.reshape((2, 75)), 1, 0).unsqueeze(0), 0,
-                   plot_ticks_and_labels=False)
+                   plot_ticks_and_labels=False, set_lims=set_lims)
         ax[0, i].set_title(idx)
 
         if i == 0:
