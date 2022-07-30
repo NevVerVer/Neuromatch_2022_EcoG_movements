@@ -28,22 +28,22 @@ Code to view and to open the data is available [here](https://github.com/Brunton
 
 ## Decoding movements
 
-Using the [dataset](https://figshare.com/projects/Generalized_neural_decoders_for_transfer_learning_across_participants_and_recording_modalities/90287) from [this paper](https://iopscience.iop.org/article/10.1088/1741-2552/abda0b) it is possible to solve movement/no-movement classification task. The corresponding jupyter-notebook can be found at `./models/Baseline-Classification-Model`. Over 95% accuracy was achieved on spectral features, suggesting their importance for decoding movements.
+Using the [dataset](https://figshare.com/projects/Generalized_neural_decoders_for_transfer_learning_across_participants_and_recording_modalities/90287) from [this paper](https://iopscience.iop.org/article/10.1088/1741-2552/abda0b) it is possible to solve movement/no-movement classification task. The corresponding jupyter-notebook can be found at [./models/Baseline-Classification-Model](./models/Baseline-Classification-Model). Over 95% accuracy was achieved on spectral features, suggesting their importance for decoding movements.
 
 ## Time-frequency autoencoder
 
 **Is it possible to infer latent variables guiding cortical dynamics captured with ECoG?**
 
-We tried to construct an encoder-decoder network based on time-frequency features. Later the encoder part of this network could be used in any ECoG-behavior task. However, one sample for training such network is of `shape = (n_channels, n_freqs, n_times)`, yielding a very high-dimensional input vector. This figure shows hope for constructing a decent time-frequency autoencoder, but it stuggles with generalization and even correct representation of input matrices:
+We tried to construct an encoder-decoder network based on time-frequency features. Later the encoder part of this network could be used in any ECoG-behavior task. However, one sample for training such network is of `shape = (n_channels, n_freqs, n_times)`, yielding a very high-dimensional input vector. This figure shows hope for constructing a decent time-frequency autoencoder, but it struggles with generalization and even correct representation of input matrices:
 
-[TODO: picture of true and reconstructed time-frequency matrices from presentation]
+![](blog/ecog_autoencoder/tfrs_ae.png)
 
 
 ## Keras to Pytorch, Oh My!
 
 ## Decoding movement angle
 
-The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii/S0165027021001345) extracted so called "reach" events and their corresponding features, such as displacement, duration, polynomial approximation and angle. We hypothesised that angle can be predicted using time-frequency features. However this was not the case. It is possible that noise from the motion-capture system and lack of 3d-reconstruction of movements made it impossible to extract reasonable features. We highly doubt that behavioral time series possess a lot of sense without normalization and smoothing. 
+The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii/S0165027021001345) extracted so-called "reach" events and their corresponding features, such as displacement, duration, polynomial approximation and angle. We hypothesised that angle can be predicted using time-frequency features. However, this was not the case. It is possible that noise from the motion-capture system and lack of 3d-reconstruction of movements made it impossible to extract reasonable features. We highly doubt that behavioral time series possess a lot of sense without normalization and smoothing. 
 
 [TODO: how reaches look like IMAGE]
 
