@@ -96,7 +96,13 @@ What the latent space encodes? 🤔
 ## Reconstruction based on DnCNN predictions
 ![](blog/dncnn/reconstruction_pipeline.png)
 
-![](blog/dncnn/latent_space_reconstruction.png)
+<p align="center">
+   <img src="blog/dncnn/latent_space_reconstruction.png" alt="">
+</p>
+
+<p align="center">
+   <i>Movement reconstruction from the decoded latent space values</i>
+</p>
 
 
 ![](blog/bottom.png)
