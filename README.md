@@ -51,34 +51,42 @@ The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii
 
 The goal of this step of our analysis was to compress movement trajectories into low-dimensional space. At the first glance, this supposed to be a trivial task, so we quickly built autoencoder and plugged the raw coordinates of the movement into it. And it did not work for all movements. See code [here](./models/reach_ae/train_ae_for_raw_reaches.ipynb).
 
+<div style="text-align: center;">
 <figure class="image">
   <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_10.png" alt="">
-  <figcaption>Movement reconstruction using linear autoencoder with the latent space = 10.</figcaption>
+  <figcaption><i>Movement reconstruction using linear autoencoder with the latent space = 10.</i></figcaption>
 </figure>
+</div>
 
+<div style="text-align: center;">
 <figure class="image">
   <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_4.png" alt="">
-  <figcaption>Movement reconstruction using linear autoencoder with the latent space = 4.</figcaption>
+  <figcaption><i>Movement reconstruction using linear autoencoder with the latent space = 4.</i></figcaption>
 </figure>
+</div>
 
-
+<div style="text-align: center;">
 <figure class="image">
   <img src="blog/reaches_analysis/reach_examples.gif" width="300" alt=""/>
-  <figcaption>Examples of preprocessed movements.</figcaption>
+  <figcaption><i>Examples of preprocessed movements.</i></figcaption>
 </figure>
+</div>
 
-
+<div style="text-align: center;">
 <figure class="image">
   <img src="blog/reaches_analysis/reconstruction_examples.png" alt=""/>
   <figcaption>Examples of the VAE reconstructions.</figcaption>
 </figure>
+</div>
 
 What the latent space encodes? 🤔
 
+<div style="text-align: center;">
 <figure class="image">
   <img src="blog/reaches_analysis/reach_z_values.gif" width="400" alt=""/>
   <figcaption>Examples of decoder reconstructions based on different values of latent variables.</figcaption>
 </figure>
+</div>
 
 
 ## Reconstruction based on DnCNN predictions
