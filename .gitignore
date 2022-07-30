@@ -311,4 +311,4 @@ cython_debug/
 # skip data files and data folder
 *.nw
 /data
-
+models/reach_ae/tb_logs
