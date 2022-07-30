@@ -19,16 +19,14 @@ A number of authors have recently suggested that we should look at the mesoscale
 
 Can movements be encoded in the brain via low-dimensional latent space variables?
 
+![](blog/main_idea.png)
+
 # Dataset
 Datasets are available [here](https://dandiarchive.org/dandiset/000055/0.220127.0436/files?location=). Supporting paper: [link](https://www.nature.com/articles/s41597-022-01280-y)
 
 Code to view and to open the data is available [here](https://github.com/BruntonUWBio/ajile12-nwb-data).
 
-[TODO: ADD PICTURE FROM THE PRESENTATION - 1st slide]
-
-<p align="center">
-   <img src="blog/main_idea.png" alt="">
-</p>
+![Peterson, S.M., Singh, S.H., Dichter, B. et al. AJILE12: Long-term naturalistic human intracranial neural recordings and pose. Sci Data 9, 184 (2022)](blog/dataset_description.png)
 
 ## Decoding movements
 
@@ -36,13 +34,15 @@ Using the [dataset](https://figshare.com/projects/Generalized_neural_decoders_fo
 
 ## Time-frequency autoencoder
 
-**Is it possible to infer latent variables guiding cortical dynamics captured with ECoG?**
+> 'Is it possible to infer low-dimensional space describing spectral dynamics in the brain? 🤔
 
 We tried to construct an encoder-decoder network based on time-frequency features. Later the encoder part of this network could be used in any ECoG-behavior task. However, one sample for training such network is of `shape = (n_channels, n_freqs, n_times)`, yielding a very high-dimensional input vector. This figure shows hope for constructing a decent time-frequency autoencoder, but it struggles with generalization and even correct representation of input matrices:
 
-<p align="center">
-   <img src="blog/ecog_autoencoder/tfrs_ae.png" alt="">
-</p>
+![](blog/ecog_autoencoder/tfrs_ae.png)
+
+The PCA, fully-connected and deep convolutional autoencoders for squeezing high-dimensional time-frequency data can be found at `\models\Handmade-TF-Autoencoder\`
+Further development is based on the idea that deep convolutional autoencoder is not able to learn due to gradient vanishing and underfitting.
+
 
 ## Keras to Pytorch, Oh My!
 
@@ -50,58 +50,51 @@ We tried to construct an encoder-decoder network based on time-frequency feature
 
 The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii/S0165027021001345) extracted so-called "reach" events and their corresponding features, such as displacement, duration, polynomial approximation and angle. We hypothesised that angle can be predicted using time-frequency features. However, this was not the case. It is possible that noise from the motion-capture system and lack of 3d-reconstruction of movements made it impossible to extract reasonable features. We highly doubt that behavioral time series possess a lot of sense without normalization and smoothing. 
 
-[TODO: how reaches look like IMAGE]
 
 ## VAE for Reaches
 
 The goal of this step of our analysis was to compress movement trajectories into low-dimensional space. At the first glance, this supposed to be a trivial task, so we quickly built autoencoder and plugged the raw coordinates of the movement into it. And it did not work for all movements. See code [here](./models/reach_ae/train_ae_for_raw_reaches.ipynb).
 
-
 <p align="center">
-   <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_10.png" alt=" Movement reconstruction using linear autoencoder with the latent space = 10">
-</p>
-<p align="center">
-   <i>Movement reconstruction using linear autoencoder with the latent space = 10.</i>
-</p>
-
-<p align="center">
-   <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_4.png" alt="">
-</p>
-<p align="center">
-   <i>Movement reconstruction using linear autoencoder with the latent space = 4.</i>
+   <figure class="image">
+     <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_10.png" alt="">
+     <figcaption><i>Movement reconstruction using linear autoencoder with the latent space = 10.</i></figcaption>
+   </figure>
 </p>
 
 <p align="center">
-   <img src="blog/reaches_analysis/reach_examples.gif" width="300" alt=""/>
-</p>
-<p align="center">
-   <i>Examples of preprocessed movements.</i>
+<figure class="image">
+  <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_4.png" alt="">
+  <figcaption><i>Movement reconstruction using linear autoencoder with the latent space = 4.</i></figcaption>
+</figure>
 </p>
 
 <p align="center">
-   <img src="blog/reaches_analysis/reconstruction_examples.png" alt=""/>
+   <figure class="image">
+     <img src="blog/reaches_analysis/reach_examples.gif" width="300" alt=""/>
+     <figcaption><i>Examples of preprocessed movements.</i></figcaption>
+   </figure>
 </p>
+
 <p align="center">
-   <i>Examples of the VAE reconstructions.</i>
+   <figure class="image">
+     <img src="blog/reaches_analysis/reconstruction_examples.png" alt=""/>
+     <figcaption><i>Examples of the VAE reconstructions.</i></figcaption>
+   </figure>
 </p>
 
 What the latent space encodes? 🤔
 
 <p align="center">
+   <figure class="image">
      <img src="blog/reaches_analysis/reach_z_values.gif" width="400" alt=""/>
+     <figcaption><i>Examples of decoder reconstructions based on different values of latent variables.</i></figcaption>
+   </figure>
 </p>
-<p align="center">
-   <i>Examples of decoder reconstructions based on different values of latent variables.</i>
-</p>
+
 
 ## Reconstruction based on DnCNN predictions
-
-<p align="center">
-   <img src="blog/dncnn/reconstruction_pipeline.png" alt="">
-</p>
-<p align="center">
-   <i>Movement reconstruction pipeline</i>
-</p>
+![](blog/dncnn/reconstruction_pipeline.png)
 
 <p align="center">
    <img src="blog/dncnn/latent_space_reconstruction.png" alt="">
