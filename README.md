@@ -106,6 +106,7 @@ What the latent space encodes? 🤔
 <p align="center">
    <img src="blog/dncnn/latent_space_reconstruction.png" alt="">
 </p>
+
 <p align="center">
    <i>Movement reconstruction from the decoded latent space values</i>
 </p>
