@@ -24,7 +24,9 @@ Code to view and to open the data is available [here](https://github.com/Brunton
 
 [TODO: ADD PICTURE FROM THE PRESENTATION - 1st slide]
 
-![](blog/main_idea.png)
+<p align="center">
+   <img src="blog/main_idea.png" alt="">
+</p>
 
 ## Decoding movements
 
@@ -36,8 +38,9 @@ Using the [dataset](https://figshare.com/projects/Generalized_neural_decoders_fo
 
 We tried to construct an encoder-decoder network based on time-frequency features. Later the encoder part of this network could be used in any ECoG-behavior task. However, one sample for training such network is of `shape = (n_channels, n_freqs, n_times)`, yielding a very high-dimensional input vector. This figure shows hope for constructing a decent time-frequency autoencoder, but it struggles with generalization and even correct representation of input matrices:
 
-![](blog/ecog_autoencoder/tfrs_ae.png)
-
+<p align="center">
+   <img src="blog/ecog_autoencoder/tfrs_ae.png" alt="">
+</p>
 
 ## Keras to Pytorch, Oh My!
 
@@ -51,48 +54,59 @@ The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii
 
 The goal of this step of our analysis was to compress movement trajectories into low-dimensional space. At the first glance, this supposed to be a trivial task, so we quickly built autoencoder and plugged the raw coordinates of the movement into it. And it did not work for all movements. See code [here](./models/reach_ae/train_ae_for_raw_reaches.ipynb).
 
+
 <p align="center">
-   <figure class="image">
-     <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_10.png" alt="">
-     <figcaption><i>Movement reconstruction using linear autoencoder with the latent space = 10.</i></figcaption>
-   </figure>
+   <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_10.png" alt=" Movement reconstruction using linear autoencoder with the latent space = 10">
+</p>
+<p align="center">
+   <i>Movement reconstruction using linear autoencoder with the latent space = 10.</i>
 </p>
 
 <p align="center">
-<figure class="image">
-  <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_4.png" alt="">
-  <figcaption><i>Movement reconstruction using linear autoencoder with the latent space = 4.</i></figcaption>
-</figure>
+   <img src="blog/reaches_analysis/reconstruction_raw_reaches_latent_space_4.png" alt="">
+</p>
+<p align="center">
+   <i>Movement reconstruction using linear autoencoder with the latent space = 4.</i>
 </p>
 
 <p align="center">
-   <figure class="image">
-     <img src="blog/reaches_analysis/reach_examples.gif" width="300" alt=""/>
-     <figcaption><i>Examples of preprocessed movements.</i></figcaption>
-   </figure>
+   <img src="blog/reaches_analysis/reach_examples.gif" width="300" alt=""/>
+</p>
+<p align="center">
+   <i>Examples of preprocessed movements.</i>
 </p>
 
 <p align="center">
-   <figure class="image">
-     <img src="blog/reaches_analysis/reconstruction_examples.png" alt=""/>
-     <figcaption><i>Examples of the VAE reconstructions.</i></figcaption>
-   </figure>
+   <img src="blog/reaches_analysis/reconstruction_examples.png" alt=""/>
+</p>
+<p align="center">
+   <i>Examples of the VAE reconstructions.</i>
 </p>
 
 What the latent space encodes? 🤔
 
 <p align="center">
-   <figure class="image">
      <img src="blog/reaches_analysis/reach_z_values.gif" width="400" alt=""/>
-     <figcaption><i>Examples of decoder reconstructions based on different values of latent variables.</i></figcaption>
-   </figure>
+</p>
+<p align="center">
+   <i>Examples of decoder reconstructions based on different values of latent variables.</i>
 </p>
 
-
 ## Reconstruction based on DnCNN predictions
-![](blog/dncnn/reconstruction_pipeline.png)
 
-![](blog/dncnn/latent_space_reconstruction.png)
+<p align="center">
+   <img src="blog/dncnn/reconstruction_pipeline.png" alt="">
+</p>
+<p align="center">
+   <i>Movement reconstruction pipeline</i>
+</p>
+
+<p align="center">
+   <img src="blog/dncnn/latent_space_reconstruction.png" alt="">
+</p>
+<p align="center">
+   <i>Movement reconstruction from the decoded latent space values</i>
+</p>
 
 
 ![](blog/bottom.png)
