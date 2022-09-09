@@ -56,6 +56,8 @@ Further development is based on the idea that deep convolutional autoencoder is 
 
 ## Keras to Pytorch, Oh My!
 
+One of our ideas for the project was wrist prediction based on ECoG time-frequency spectrograms. The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii/S0165027021001345) once used [HTNet](https://github.com/BruntonUWBio/HTNet_generalized_decoding/blob/e0058d4bc67a95a59e4a51384d895d0d07c4d65b/model_utils.py#L288) structure for a similar task and programmed it in Keras. We reproduced the HTNet model, which refers to one of the ConvNets developed by the creators of the dataset, using which we obtained high performance in binary classification according to several metrics. This task introduced a bit of struggle because we had to transfer initial Keras code to PyTorch, bearing in mind that PyTorch lacks individual functions for Depthwise and Separable convolutions. See code [here](.models/wrist_classification/NMA_Wrist_Classification.ipynb).
+
 ## Decoding movement angle
 
 The authors of the [paper](https://www.sciencedirect.com/science/article/abs/pii/S0165027021001345) extracted so-called "reach" events and their corresponding features, such as displacement, duration, polynomial approximation and angle. We hypothesised that angle can be predicted using time-frequency features. However, this was not the case. It is possible that noise from the motion-capture system and lack of 3d-reconstruction of movements made it impossible to extract reasonable features. We highly doubt that behavioral time series possess a lot of sense without normalization and smoothing. 
